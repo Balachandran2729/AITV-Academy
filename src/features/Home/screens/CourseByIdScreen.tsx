@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, Image, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ const CourseByIdScreen = () => {
   const [course, setCourse] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -34,6 +35,21 @@ const CourseByIdScreen = () => {
 
     fetchCourseDetails();
   }, [id]);
+
+  // Handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (id) {
+      const response = await getProductById(id);
+      if (response.status === 200 && response.data?.success) {
+        setCourse(response.data.data);
+        setError(null);
+      } else {
+        setError('Failed to refresh course details.');
+      }
+    }
+    setRefreshing(false);
+  };
 
   if (loading) {
     return (
@@ -71,7 +87,15 @@ const CourseByIdScreen = () => {
         </Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#2563EB']}
+          progressBackgroundColor="#FFFFFF"
+          tintColor="#2563EB"
+        />
+      }>
         {/* Course Banner */}
         <Image 
           source={{ uri: course.images?.[0] || course.thumbnail || '' }} 

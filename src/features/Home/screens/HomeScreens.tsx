@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { 
+  View, 
+  Text, 
+  ActivityIndicator, 
+  TextInput,
+  RefreshControl,
+  TouchableOpacity 
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { getAllProducts  } from '../services/prodects';
+import { getAllProducts } from '../services/prodects';
 import CourseCard from '../components/CourseCard';
 
 
 const HomeScreen = () => {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation<any>();
   
   // The 2 dynamic parameters
@@ -36,6 +45,40 @@ const HomeScreen = () => {
     setLoading(false);
   };
 
+  // Filter courses based on search query
+  const filteredCourses = useMemo(() => {
+    if (!searchQuery.trim()) return courses;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return courses.filter((course) => {
+      const title = course.title?.toLowerCase() || '';
+      const description = course.description?.toLowerCase() || '';
+      const category = course.category?.toLowerCase() || '';
+      const brand = course.brand?.toLowerCase() || '';
+      
+      return (
+        title.includes(query) ||
+        description.includes(query) ||
+        category.includes(query) ||
+        brand.includes(query)
+      );
+    });
+  }, [courses, searchQuery]);
+
+  // Handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setPage(1);
+    setSearchQuery('');
+    await fetchCourses(1);
+    setRefreshing(false);
+  };
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
   // Fetch data on initial mount and when page changes
   useEffect(() => {
     fetchCourses(page);
@@ -58,19 +101,49 @@ const HomeScreen = () => {
         </Text>
       </View>
 
+      {/* Search Bar Section */}
+      <View className="bg-white px-5 py-4 border-b border-gray-200 shadow-sm">
+        <View className="flex-row items-center bg-gray-100 rounded-lg px-4 py-3">
+          <Ionicons name="search" size={20} color="#6B7280" />
+          <TextInput
+            style={{ flex: 1 }}
+            placeholder="Search courses, instructors..."
+            placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            className="ml-3 text-base text-gray-900"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={handleClearSearch} className="p-1">
+              <Ionicons name="close-circle" size={20} color="#6B7280" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* FlashList Section */}
       <View className="flex-1 px-4 pt-4">
         <FlashList
-          data={courses}
+          data={filteredCourses}
           renderItem={({ item }) => 
-            <CourseCard course={item} 
-            onPress={() => navigation.navigate('CourseById' as never, { id: item.id } as never)}
-          />}
+            <CourseCard 
+              course={item} 
+              onPress={() => navigation.navigate('CourseById' as never, { id: item.id } as never)}
+            />
+          }
           keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-          // estimatedItemSize={145}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#2563EB']}
+              progressBackgroundColor="#FFFFFF"
+              tintColor="#2563EB"
+            />
+          }
           ListFooterComponent={
             loading ? (
               <ActivityIndicator size="large" color="#2563EB" className="my-4" />
@@ -78,9 +151,12 @@ const HomeScreen = () => {
           }
           ListEmptyComponent={
             !loading ? (
-              <Text className="text-center text-gray-500 mt-10">
-                No courses found.
-              </Text>
+              <View className="items-center justify-center mt-10">
+                <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+                <Text className="text-center text-gray-500 mt-4 text-base">
+                  {searchQuery ? 'No courses found matching your search' : 'No courses found'}
+                </Text>
+              </View>
             ) : null
           }
         />
