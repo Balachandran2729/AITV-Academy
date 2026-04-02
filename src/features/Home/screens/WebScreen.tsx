@@ -1,11 +1,11 @@
-// src/screens/WebScreen.tsx (or app/course/web/[id].tsx)
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useRoute , useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getWebViewContent } from '../services/webView'; // Adjust path
+import { getWebViewContent } from '../services/webView';
+import { useProgressStore } from '../../Profile/store/useProgressStore';
 
 const WebScreen = () => {
   const route = useRoute<any>();
@@ -17,6 +17,9 @@ const WebScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCompletedModal, setShowCompletedModal] = useState(false);
+  const markAsComplete = useProgressStore((state) => state.markAsComplete);
+
+
 
   // Fetch the HTML content when the screen mounts
   useEffect(() => {
@@ -74,15 +77,13 @@ const WebScreen = () => {
     true; // Required for injectedJavaScript to run cleanly
   `;
 
-  // --- BIDIRECTIONAL BRIDGE: RECEIVING MESSAGES ---
-  // This handles messages sent from the WebView's javascript back to React Native
+
   const handleWebViewMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       
       if (data.action === 'LESSON_COMPLETE') {
-        // Here you could trigger your Local Notification (Part 4.1) 
-        // or save progress to AsyncStorage (Part 5.1)
+        markAsComplete(Number(data.courseId));
         setShowCompletedModal(true);
       }
     } catch (e) {

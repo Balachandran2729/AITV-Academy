@@ -16,20 +16,31 @@ import { useAuthStore } from '../../Auth/store/authStore';
 import { logout as logoutService } from '../../Auth/services/loginLogout';
 import { showToast } from '../../../core/Notification/toastUtils';
 import { changeAvatar } from '../services/changeAvatar';
+import { useBookmarkStore } from '../../../core/common/bookMarkConfig'; 
+import { useProgressStore } from '../store/useProgressStore';
 
 const ProfileScreen = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<any>(null); // State to hold selected local image
-  const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now()); // Force image reload with unique timestamp
+  const [selectedImage, setSelectedImage] = useState<any>(null); 
   
-  // Extract setUser assuming your authStore has a way to update the user data
-  const { user, setUser } = useAuthStore();
+  const { user, setUser, clearAuth } = useAuthStore();
+
+  const enrolledCount = useBookmarkStore((state) => state.bookmarkedIds.length);
+  const completedCourseIds = useProgressStore((state) => state.completedCourseIds);
+
+  const completedEnrolledCourses = completedCourseIds.filter(id => 
+  useBookmarkStore.getState().bookmarkedIds.includes(id)).length;
+
+const avgProgress = enrolledCount === 0 ? 0 : Math.round((completedEnrolledCourses / enrolledCount) * 100);
+
+
 
   const handleImagePick = async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
       quality: 0.8,
+      selectionLimit: 1,
     });
 
     if (result.didCancel) {
@@ -53,24 +64,29 @@ const ProfileScreen = () => {
     showToast.loading('Uploading', 'Saving new avatar...');
 
     try {
+      // Send to server
       const response = await changeAvatar(selectedImage);
 
-      showToast.hideLoading();
-
-      if (response.success && response.data) {
+      if (response.success) {
+        showToast.hideLoading();
         showToast.success('Success', 'Avatar updated successfully!');
       
-        if (setUser) {
-           // Merge new data with existing user to preserve all fields
-           setUser({ ...user, ...response.data } as any);
+        // THE BUG FIX: Forcefully update the Zustand store with the local URI immediately
+        // so React Native doesn't wait for a fresh network cache to render the new image.
+        if (setUser && user) {
+           setUser({ 
+             ...user, 
+             ...response.data, 
+             avatar: {
+               ...user.avatar,
+               url: selectedImage.uri // Override with the local URI instantly
+             }
+           });
         }
         
-        // Force image reload with a fresh timestamp
-        setAvatarTimestamp(Date.now());
-        
-        // Clear selected image AFTER updating user to ensure avatar displays correctly
-        setSelectedImage(null);
+        setSelectedImage(null); // Clear edit mode
       } else {
+        showToast.hideLoading();
         showToast.error('Upload Failed', response.message || 'Could not save avatar');
       }
     } catch (error: any) {
@@ -86,48 +102,28 @@ const ProfileScreen = () => {
   };
 
   const handleLogout = async () => {
-    showToast.confirm(
-      'Logout',
-      'Are you sure you want to logout?',
-      async () => {
-        setIsLoggingOut(true);
-        showToast.loading('Logging Out', 'Please wait...');
-        try {
-          const response = await logoutService();
-          
-          await AsyncStorage.removeItem('authToken');
-          await AsyncStorage.removeItem('refreshToken');
-          
-          if (response.data?.success === false) {
-            showToast.hideLoading();
-            showToast.error('Error', response.data.message || 'Failed to logout');
-            setIsLoggingOut(false);
-            return;
-          }
-          
-          const { clearAuth } = useAuthStore.getState();
-          clearAuth();
-          
-          showToast.hideLoading();
-          showToast.success('Success', 'Logged out successfully');
-        } catch (error: any) {
-          showToast.hideLoading();
-          showToast.error('Error', error.message || 'Failed to logout');
-          setIsLoggingOut(false);
-        }
-      },
-      () => {}, // Cancel action
-      { confirmText: 'LOGOUT', cancelText: 'CANCEL' }
-    );
+    // Note: Adjust the confirm dialog parameters based on how your toastUtils works
+    setIsLoggingOut(true);
+    showToast.loading('Logging Out', 'Please wait...');
+    try {
+      await logoutService();
+      
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('refreshToken');
+      
+      clearAuth();
+      
+      showToast.hideLoading();
+      showToast.success('Success', 'Logged out successfully');
+    } catch (error: any) {
+      showToast.hideLoading();
+      showToast.error('Error', error.message || 'Failed to logout');
+      setIsLoggingOut(false);
+    }
   };
 
-  // Determine which image to show: locally selected one OR server avatar OR default icon
-  // Add timestamp to avatar URL as cache buster to force image reload
-  const displayImageUri = selectedImage 
-    ? selectedImage.uri 
-    : user?.avatar?.url 
-      ? `${user.avatar.url}?t=${avatarTimestamp}` 
-      : null;
+  // Decide what image to show: User's new selection OR saved avatar OR nothing
+  const displayImageUri = selectedImage ? selectedImage.uri : user?.avatar?.url;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -144,11 +140,9 @@ const ProfileScreen = () => {
             {/* Centered Avatar & Basic Info */}
             <View className="items-center mt-6 mb-8">
               <View className="relative">
-                {/* Avatar Image/Icon Container */}
-                <View className="w-28 h-28 rounded-full bg-indigo-100 items-center justify-center border-4 border-white shadow-sm mb-4">
+                <View className="w-28 h-28 rounded-full bg-indigo-100 items-center justify-center border-4 border-white shadow-sm mb-4 overflow-hidden">
                   {displayImageUri ? (
                     <Image 
-                      key={`avatar-${avatarTimestamp}`}
                       source={{ uri: displayImageUri }} 
                       className="w-full h-full rounded-full"
                     />
@@ -161,22 +155,22 @@ const ProfileScreen = () => {
                 <TouchableOpacity 
                   onPress={handleImagePick}
                   activeOpacity={0.8}
-                  className="absolute bottom-4 right-0 bg-indigo-600 w-8 h-8 rounded-full items-center justify-center border-2 border-white shadow-sm"
+                  className="absolute bottom-4 right-0 bg-blue-600 w-9 h-9 rounded-full items-center justify-center border-2 border-white shadow-sm"
                 >
-                  <MaterialCommunityIcons name="camera-plus" size={16} color="white" />
+                  <MaterialCommunityIcons name="camera-plus" size={18} color="white" />
                 </TouchableOpacity>
               </View>
 
-              <Text className="text-2xl font-bold text-gray-900">{user.username || 'User'}</Text>
+              <Text className="text-2xl font-bold text-gray-900">{user.username || 'Student'}</Text>
               <Text className="text-base text-gray-500 mt-1">{user.email}</Text>
 
               {/* Conditionally Rendered Save/Cancel Buttons */}
               {selectedImage && (
-                <View className="flex-row mt-4 space-x-3">
+                <View className="flex-row mt-5 space-x-3">
                   <TouchableOpacity 
                     disabled={isUploading}
                     onPress={cancelImageSelection}
-                    className="px-6 py-2 bg-gray-200 rounded-xl justify-center items-center"
+                    className="px-6 py-2.5 bg-gray-200 rounded-xl justify-center items-center"
                   >
                     <Text className="text-gray-700 font-semibold">Cancel</Text>
                   </TouchableOpacity>
@@ -184,7 +178,7 @@ const ProfileScreen = () => {
                   <TouchableOpacity 
                     disabled={isUploading}
                     onPress={handleSaveAvatar}
-                    className="px-6 py-2 bg-green-600 rounded-xl flex-row justify-center items-center shadow-sm"
+                    className="px-6 py-2.5 bg-blue-600 rounded-xl flex-row justify-center items-center shadow-sm"
                   >
                     {isUploading ? (
                       <ActivityIndicator size="small" color="white" />
@@ -197,6 +191,18 @@ const ProfileScreen = () => {
                   </TouchableOpacity>
                 </View>
               )}
+            </View>
+
+            {/* USER STATISTICS SECTION */}
+            <View className="flex-row justify-between mb-8">
+              <View className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 items-center mr-2">
+                <Text className="text-3xl font-extrabold text-blue-600 mb-1">{enrolledCount}</Text>
+                <Text className="text-sm text-gray-500 font-medium">Courses Enrolled</Text>
+              </View>
+              <View className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 items-center ml-2">
+                <Text className="text-3xl font-extrabold text-green-600 mb-1">{avgProgress}%</Text>
+                <Text className="text-sm text-gray-500 font-medium">Avg Progress</Text>
+              </View>
             </View>
 
             {/* Detailed Info Card */}
@@ -253,8 +259,7 @@ const ProfileScreen = () => {
           </View>
         ) : (
           <View className="px-6 py-20 items-center justify-center">
-            <MaterialCommunityIcons name="account-search-outline" size={64} color="#d1d5db" />
-            <Text className="text-gray-500 font-medium mt-4 text-lg">No user information available</Text>
+            <ActivityIndicator size="large" color="#2563EB" />
           </View>
         )}
 
