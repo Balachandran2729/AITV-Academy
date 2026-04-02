@@ -20,4 +20,11 @@ export class ApiEndPoints {
     UPLOAD_AVATAR : '/api/v1/users/avatar',
   }
 
+  static COURSES = {
+
+    GET_ALL : '/api/v1/public/randomproducts',
+    GET_BY_ID : (id: string) => `/api/v1/public/randomproducts/${id}`,
+
+  }
+
 }

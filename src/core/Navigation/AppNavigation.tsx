@@ -3,10 +3,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Entypo from '@expo/vector-icons/Entypo';
+
 import ProfileScreen from '../../features/Profile/screens/ProfileScreen';
 import HomeScreen from '../../features/Home/screens/HomeScreens';
+import CourseByIdScreen from '../../features/Home/screens/CourseByIdScreen';
 import LoginScreen from '../../features/Auth/screens/LoginScreen';
 import RegisterScreen from '../../features/Auth/screens/RegisterScreen';
+
+
 import SplashScreen from './SplashScreen';
 import { useAuthInit } from '../../features/Auth/hooks/useAuthInit';
 import { useAuthStore } from '../../features/Auth/store/authStore';
@@ -59,7 +63,7 @@ const AppTabs = () => {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={CourseStack}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Entypo name="home" size={size} color={color} />
@@ -78,6 +82,26 @@ const AppTabs = () => {
     </Tab.Navigator>
   );
 };
+
+
+const CourseStack = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen 
+        name="HomeMain" 
+        component={HomeScreen as any}
+      />
+      <Stack.Screen 
+        name="CourseById" 
+        component={CourseByIdScreen as any}
+      />
+    </Stack.Navigator>
+  );
+}
 
 // Main Navigation Manager
 const AppNavigation = () => {
