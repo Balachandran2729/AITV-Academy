@@ -87,8 +87,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         }, 1500);
       } else {
         const errorMessage = response.data?.message || 'Registration failed';
-        console.log("Registration failed:", errorMessage);
-        
+        console.log("Registration failed:", response.data);
         showToast.error('Registration Failed', errorMessage);
       }
     } catch (error: any) {

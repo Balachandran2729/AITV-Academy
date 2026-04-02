@@ -7,14 +7,16 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAuthStore } from '../../Auth/store/authStore';
+import { logout as logoutService } from '../../Auth/services/loginLogout';
 import { showToast } from '../../../core/Notification/toastUtils';
 
 const ProfileScreen = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
 
   const handleLogout = async () => {
     showToast.confirm(
@@ -24,7 +26,24 @@ const ProfileScreen = () => {
         setIsLoggingOut(true);
         showToast.loading('Logging Out', 'Please wait...');
         try {
-          await logout();
+          // Call the logout service function
+          const response = await logoutService();
+          
+          // Remove tokens from AsyncStorage
+          await AsyncStorage.removeItem('authToken');
+          await AsyncStorage.removeItem('refreshToken');
+          
+          if (response.data.success === false) {
+            showToast.hideLoading();
+            showToast.error('Error', response.data.message || 'Failed to logout');
+            setIsLoggingOut(false);
+            return;
+          }
+          
+          // Clear auth store
+          const { clearAuth } = useAuthStore.getState();
+          clearAuth();
+          
           showToast.hideLoading();
           showToast.success('Success', 'Logged out successfully');
           // Navigation will automatically switch to auth stack

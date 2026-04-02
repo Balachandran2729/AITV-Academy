@@ -87,6 +87,13 @@ export const UserDataSchema = z.object({
   success: nullableOptional(z.boolean()),
 });
 
+export const LogoutScheme = z.object({
+  statusCode: nullableOptional(z.number()),
+  data: nullableOptional(z.any()),
+  message: nullableOptional(z.string()),
+  success: nullableOptional(z.boolean()),
+});
+
 
 
 
@@ -97,3 +104,4 @@ export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
 export type OtherLoginMethod = z.infer<typeof OtherLoginMethodSchema>;
 export type RefreshTokenResponse = z.infer<typeof RefreshTokenResponseSchema>;
 export type UserData = z.infer<typeof UserDataSchema>;
+export type LogoutResponse = z.infer<typeof LogoutScheme>;

@@ -5,7 +5,7 @@ import {OtherLoginMethod , RegisterRequest , RegisterResponse } from "../dataTyp
 
 export const register = async (registerData: RegisterRequest): Promise<{data : RegisterResponse ; error?: OtherLoginMethod , status?: any }> => {
     try {
-        const response = await apiClient.post<RegisterResponse>(ApiEndPoints.AUTH.REGISTER, registerData, { protected: false });
+        const response = await apiClient.post<RegisterResponse>(ApiEndPoints.AUTH.REGISTER, registerData);
 
         if (response.error) {
             return {
