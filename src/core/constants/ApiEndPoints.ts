@@ -12,6 +12,12 @@ export class ApiEndPoints {
     GIT_LOGIN : '/api/v1/users/github',
     GIT_LOGIN_CALLBACK : '/api/v1/users/github/callback',
     REFRESH_TOKEN : '/api/v1/users/refresh-token',
+    FORGOT_PASSWORD : '/api/v1/users/forgot-password',
+    RESET_PASSWORD : '/api/v1/users/change-password',
   } 
+
+  static PROFILE = {
+    UPLOAD_AVATAR : '/api/v1/users/avatar',
+  }
 
 }

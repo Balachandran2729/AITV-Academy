@@ -207,9 +207,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 />
               </View>
               {passwordError && <Text className="text-red-500 text-xs mt-1 ml-1">{passwordError}</Text>}
-              <TouchableOpacity className="mt-3 items-end">
+              {/* <TouchableOpacity className="mt-3 items-end">
                 <Text className="text-blue-600 font-semibold text-sm">Forgot Password?</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
 
             {/* Login Button */}
@@ -217,7 +217,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               disabled={loading || isGoogleLoading || isGithubLoading}
               onPress={handleEmailLogin}
               activeOpacity={0.8}
-              className={`h-14 rounded-2xl flex-row items-center justify-center shadow-sm ${loading ? 'bg-blue-400' : 'bg-blue-600'}`}
+              className={`h-14 mt-4 rounded-2xl flex-row items-center justify-center shadow-sm ${loading ? 'bg-blue-400' : 'bg-blue-600'}`}
             >
               {loading ? (
                 <ActivityIndicator color="white" />
