@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getProductById } from '../services/prodects';
 import { Product } from '../types/dataTypes'; 
+import { useBookmarkStore } from '../../../core/common/bookMarkConfig';
 
 
 const CourseByIdScreen = () => {
@@ -16,6 +17,12 @@ const CourseByIdScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // <-- Grab bookmark state and toggle function from Zustand
+  const isBookmarked = useBookmarkStore((state) => 
+    course?.id ? state.isBookmarked(course.id) : false
+  );
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
 
   useEffect(() => {
     const fetchCourseDetails = async () => {
@@ -36,7 +43,6 @@ const CourseByIdScreen = () => {
     fetchCourseDetails();
   }, [id]);
 
-  // Handle pull-to-refresh
   const onRefresh = async () => {
     setRefreshing(true);
     if (id) {
@@ -77,14 +83,27 @@ const CourseByIdScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      {/* Custom Header */}
-      <View className="flex-row items-center px-4 py-3 bg-white z-10 border-b border-gray-100">
+      {/* Custom Header with Bookmark Toggle */}
+      <View className="flex-row items-center justify-between px-4 py-3 bg-white z-10 border-b border-gray-100">
         <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full bg-gray-50">
           <Ionicons name="arrow-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text className="flex-1 text-center text-lg font-bold text-gray-900 mr-8" numberOfLines={1}>
+        
+        <Text className="flex-1 text-center text-lg font-bold text-gray-900 px-2" numberOfLines={1}>
           Course Details
         </Text>
+
+        {/* <-- The Bookmark Toggle Button --> */}
+        <TouchableOpacity 
+          onPress={() => course.id && toggleBookmark(course.id)} 
+          className="p-2 -mr-2 rounded-full"
+        >
+          <Ionicons 
+            name={isBookmarked ? "bookmark" : "bookmark-outline"} 
+            size={24} 
+            color={isBookmarked ? "#2563EB" : "#1F2937"} 
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false} refreshControl={
@@ -96,14 +115,12 @@ const CourseByIdScreen = () => {
           tintColor="#2563EB"
         />
       }>
-        {/* Course Banner */}
         <Image 
           source={{ uri: course.images?.[0] || course.thumbnail || '' }} 
           className="w-full h-72 bg-gray-100"
           resizeMode="cover"
         />
 
-        {/* Content Section */}
         <View className="p-5 pb-24">
           <View className="flex-row items-center justify-between mb-3">
             <View className="bg-blue-100 px-3 py-1 rounded-full">
@@ -136,7 +153,6 @@ const CourseByIdScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Bar for Pricing and Action */}
       <View className="absolute bottom-0 w-full bg-white border-t border-gray-200 px-5 py-4 flex-row items-center justify-between pb-8">
         <View>
           <Text className="text-sm text-gray-500 font-medium">Total Price</Text>
@@ -147,7 +163,7 @@ const CourseByIdScreen = () => {
         <TouchableOpacity 
           className="bg-blue-600 px-8 py-4 rounded-xl shadow-sm shadow-blue-300"
           activeOpacity={0.8}
-          onPress={() => navigation.navigate('Web',{id: course.id})}
+          onPress={() => navigation.navigate('Web', {id: course.id})}
         >
           <Text className="text-white text-base font-bold tracking-wide">
             Enroll Now

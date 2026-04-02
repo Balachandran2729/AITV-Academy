@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, Animated } from 'react-native';
-import Toast, { ToastConfig } from 'react-native-toast-message';
+import Toast from 'react-native-toast-message';
+import type { ToastConfig } from 'react-native-toast-message';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const CustomToast = ({
