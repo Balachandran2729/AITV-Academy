@@ -50,6 +50,8 @@ export const SingleProductResponseSchema = z.object({
 });
 
 
+export const WebViewResponseSchema = z.string();
+
 export type Product = z.infer<typeof ProductSchema>;
 
 export type allProductsResponse = z.infer<typeof allProductsSchema>;

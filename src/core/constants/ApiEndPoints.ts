@@ -24,6 +24,7 @@ export class ApiEndPoints {
 
     GET_ALL : '/api/v1/public/randomproducts',
     GET_BY_ID : (id: string) => `/api/v1/public/randomproducts/${id}`,
+    WEB_TEMPLEATE : '/api/v1/kitchen-sink/response/html',
 
   }
 

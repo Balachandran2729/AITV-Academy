@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, Image, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getProductById } from '../services/prodects';
 import { Product } from '../types/dataTypes'; 
 
+
 const CourseByIdScreen = () => {
   const route = useRoute<any>();
-  const navigation = useNavigation<NavigationProp<any>>();
+  const navigation = useNavigation<any>();
   const id = route.params?.id;
-  console.log("Id :" , id);
-  
+    
   const [course, setCourse] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +147,7 @@ const CourseByIdScreen = () => {
         <TouchableOpacity 
           className="bg-blue-600 px-8 py-4 rounded-xl shadow-sm shadow-blue-300"
           activeOpacity={0.8}
+          onPress={() => navigation.navigate('Web',{id: course.id})}
         >
           <Text className="text-white text-base font-bold tracking-wide">
             Enroll Now

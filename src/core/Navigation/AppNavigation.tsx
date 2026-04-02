@@ -9,6 +9,7 @@ import HomeScreen from '../../features/Home/screens/HomeScreens';
 import CourseByIdScreen from '../../features/Home/screens/CourseByIdScreen';
 import LoginScreen from '../../features/Auth/screens/LoginScreen';
 import RegisterScreen from '../../features/Auth/screens/RegisterScreen';
+import WebScreen from '../../features/Home/screens/WebScreen';
 
 
 import SplashScreen from './SplashScreen';
@@ -99,6 +100,12 @@ const CourseStack = () => {
         name="CourseById" 
         component={CourseByIdScreen as any}
       />
+
+      <Stack.Screen 
+        name="Web" 
+        component={WebScreen as any}
+      />
+
     </Stack.Navigator>
   );
 }
