@@ -1,13 +1,18 @@
+import React from 'react';
 import "./global.css"
-import {Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AppNavigation from './src/core/Navigation/AppNavigation';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from './src/core/Notification/ToastConfig';
 
 export default function App() {
   return (
-    <View className="flex-1 items-center justify-center bg-black">
-      <Text className="text-xl font-bold text-white">
-        Welcome to Nativewind!
-      </Text>
-    </View>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <AppNavigation />
+        <Toast config={toastConfig} />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
-
