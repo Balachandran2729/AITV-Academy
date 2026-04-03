@@ -7,45 +7,36 @@ import { AppState } from 'react-native';
 import AppNavigation from './src/core/Navigation/AppNavigation';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './src/core/Notification/ToastConfig';
-import { 
-  registerForPushNotificationsAsync, 
-  scheduleRetentionReminder, 
-  handleAppClosing,
-  checkAndRescheduleRetentionNotification 
-} from './src/core/Notification/useNotifications';
+import { registerForPushNotificationsAsync, scheduleRetentionReminder,  cancelRetentionReminder} from './src/core/Notification/useNotifications';
 import NoNetworkOverlay from './src/core/Navigation/NoNetworkOverlay';
 
 export default function App() {
-  useEffect(() => {
+ useEffect(() => {
     const setupApp = async () => {
-      // Request permission safely
-      const hasPermission = await registerForPushNotificationsAsync();
+      await registerForPushNotificationsAsync();
       await ScreenOrientation.unlockAsync();
-      
-      // Check and potentially reschedule retention notification when app opens
-      await checkAndRescheduleRetentionNotification();
-      
-      // If the user grants permission, set/reset the 24-hour "Come back" reminder
-      if (hasPermission) {
-        await scheduleRetentionReminder();
-      }
+      await cancelRetentionReminder();
     };
 
     setupApp();
 
-    // Handle app state changes to detect when app is going to background/close
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'background' || nextAppState === 'inactive') {
-        // Note: AppState might not catch hard app termination reliably
-        // The main solution is proper scheduling with unique identifiers
-        handleAppClosing();
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+       console.log('AppState changed to:', nextAppState);
+      if (nextAppState === 'background') {
+        // ✅ App went to background — schedule it
+        console.log('📅 Scheduling retention reminder...');
+        await scheduleRetentionReminder();
+      }
+
+      if (nextAppState === 'active') {
+        // ✅ User came back — cancel it
+        console.log('🚫 Cancelling retention reminder...');
+        await cancelRetentionReminder();
       }
     });
 
-    return () => {
-      subscription?.remove();
-    };
-  }, []); 
+    return () => subscription?.remove();
+  }, []);
 
   return (
     <SafeAreaProvider>
